@@ -16,6 +16,8 @@ class PC:
         self.con_1 = None
         self.con_2 = None
         self.con_ac = None
+        # Buffer:
+        self.buffer = []
         # Thread:
         self.thread = Thread(target=self.rodando, args=())
         self.thread.start()
@@ -28,9 +30,18 @@ class PC:
         if self.con_2 != None:
             self.socket.sendto(mensagem.encode(), self.con_2)
         while True:
-            mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
-            mensagem_recebida = mensagem_recebida.decode()
-            print(f"{self.nome} : {mensagem_recebida}")
+            self.rede()
+            for m in self.buffer:
+                print(f"{self.nome} : {m}")
+                self.buffer.remove(m)
+    
+    def rede(self):
+        mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
+        mensagem_recebida = mensagem_recebida.decode()
+        self.buffer_add(mensagem_recebida)
+
+    def buffer_add(self, mensagem):
+        self.buffer.append(mensagem)
     
     def set_con_1(self, con):
         self.con_1 = con
@@ -40,7 +51,6 @@ class PC:
     
     def set_con_ac(self, ac):
         self.con_ac = ac
-
 
 def conectar_pc_pc(pc1, pc2):
     pc1.set_con_2(pc2.endereco_servidor)
