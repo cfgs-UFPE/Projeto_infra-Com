@@ -1,6 +1,8 @@
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
+from mensagem import *
 import time
+import rsa
 
 class PC:
     def __init__(self, nome, porta = 12345):
@@ -16,33 +18,30 @@ class PC:
         self.con_1 = None
         self.con_2 = None
         self.con_ac = None
-        # Buffer:
-        self.buffer = []
+        # Chaves privada:
+        self.chave = None
         # Thread:
         self.thread = Thread(target=self.rodando, args=())
+    
+    def iniciar(self):
         self.thread.start()
 
     def rodando(self):
-        time.sleep(2)
-        mensagem = "Mensagem de " + self.nome
-        if self.con_1 != None:
-            self.socket.sendto(mensagem.encode(), self.con_1)
-        if self.con_2 != None:
-            self.socket.sendto(mensagem.encode(), self.con_2)
+        self.registrar_em_ac()
         while True:
-            self.rede()
-            for m in self.buffer:
-                print(f"{self.nome} : {m}")
-                self.buffer.remove(m)
-    
-    def rede(self):
-        mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
-        mensagem_recebida = mensagem_recebida.decode()
-        self.buffer_add(mensagem_recebida)
+            mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
+            mensagem_recebida = mensagem_recebida.decode()
+            #print(f"{self.nome} : {mensagem_recebida} de {endereco_remetente}")
 
     def buffer_add(self, mensagem):
         self.buffer.append(mensagem)
     
+    def registrar_em_ac(self):
+        if self.con_ac != None:
+            m = Mensagem(Tipo.CRIAR_CHAVE, self.endereco_servidor, self.con_ac)
+            m_string = m.info_para_string()
+            self.socket.sendto(m_string.encode(), self.con_ac)
+
     def set_con_1(self, con):
         self.con_1 = con
     
