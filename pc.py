@@ -19,24 +19,23 @@ class PC:
         self.con_2 = None
         self.con_ac = None
         # Chaves privada:
-        self.chave = None
+        self.chave_privada = None
         # Thread:
-        self.thread_rodando = Thread(target=self.rodando, args=())
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
     
     def iniciar(self):
         self.registrar_em_ac()
-        self.thread_rodando.start()
         self.thread_receber_mensagens.start()
-
-    def rodando(self):
-        pass
 
     def receber(self):
         while True:
             mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
             mensagem_recebida = mensagem_recebida.decode()
-            #print(f"{self.nome} : {mensagem_recebida} de {endereco_remetente}")
+            m = Mensagem()
+            m.string_para_info(mensagem_recebida)
+            if m.tipo == TipoMensagem.CHAVE_PRIVADA:
+                self.chave_privada = self.string_para_chave(m.dados)
+                print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {endereco_remetente}.")
     
     # Faz PC se registrar na Autoridade Certificadora.
     def registrar_em_ac(self):
@@ -64,8 +63,8 @@ class PC:
         elif tipo == TipoCon.CON_AC:
             self.set_con_ac(endereco)
     
-    def string_para_chave(string):
-        divisor = "*-*"
+    def string_para_chave(self, string):
+        divisor = "---"
         s = string.split(divisor)
         info = []
         for i in range(1, len(s)):

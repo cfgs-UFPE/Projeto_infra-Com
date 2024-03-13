@@ -24,15 +24,10 @@ class AC:
         # Chaves publicas:
         self.chaves_dict = {}
         # Thread:
-        self.thread_rodando = Thread(target=self.rodando, args=())
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
     
     def iniciar(self):
-        self.thread_rodando.start()
         self.thread_receber_mensagens.start()
-
-    def rodando(self):
-        pass
 
     def receber(self):
         while True:
@@ -60,9 +55,9 @@ class AC:
     def envia_chave_privada(self, chave_privada, endereco_pc):
         chave_string = self.chave_para_string(chave_privada)
         print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
-        #m = Mensagem()
-        #m_string = m.info_para_string()
-        #self.socket.sendto(m_string.encode(), endereco_pc)
+        m = Mensagem(TipoMensagem.CHAVE_PRIVADA, self.endereco_servidor, endereco_pc, chave_string)
+        m_string = m.info_para_string()
+        self.socket.sendto(m_string.encode(), endereco_pc)
 
     # - Sets:
     def set_con_1(self, con):
@@ -100,7 +95,7 @@ class AC:
 
     # - Transforma Chaves:
     def chave_para_string(self, chave):
-        divisor = "*-*"
+        divisor = "---"
         s = ""
         if isinstance(chave, rsa.PrivateKey):
             s = "Privada"

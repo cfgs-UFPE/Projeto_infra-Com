@@ -72,3 +72,4 @@ class Mensagem:
 class TipoMensagem():
     NADA = 0
     CRIAR_CHAVE = 1
+    CHAVE_PRIVADA = 2
