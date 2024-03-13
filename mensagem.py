@@ -14,6 +14,7 @@ class Mensagem:
         # Variaveis internas:
         self.divisor = "*-*"
 
+    # Converte as informações da mensagem em uma string.
     def info_para_string(self):
         s = ""
         informacoes = [self.tipo, self.origem_nome_servidor, self.origem_porta_servidor,
@@ -23,6 +24,7 @@ class Mensagem:
         s = s.removeprefix(self.divisor)
         return s
 
+    # Converte uma string para as informações da mensagem. 
     def string_para_info(self, string):
         s = string.split(self.divisor)
         informacoes = ["tipo", "origem_nome_servidor", "origem_porta_servidor",
@@ -32,9 +34,10 @@ class Mensagem:
             set_info = getattr(self, f"set_{info}")
             set_info(s[i])
     
+    # - Sets:
     def set_tipo(self, valor_tipo):
-        if valor_tipo == None or valor_tipo == 'None':
-            self.tipo = Tipo.NADA
+        if valor_tipo == None:
+            self.tipo = TipoMensagem.NADA
         else:
             if isinstance(valor_tipo, int):
                 self.tipo = valor_tipo
@@ -66,6 +69,6 @@ class Mensagem:
     def set_dados(self, valor_dados):
         self.dados = valor_dados
 
-class Tipo():
+class TipoMensagem():
     NADA = 0
     CRIAR_CHAVE = 1

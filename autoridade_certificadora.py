@@ -1,16 +1,16 @@
+from mensagem import *
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
-from mensagem import *
-import time
 import rsa
+import time
 
 class AC:
-    def __init__(self, nome, porta = 12345):
-        # Preparando informações de AC:
+    def __init__(self, nome, endereco):
+        # Preparando informações de PC:
         self.nome = nome
-        self.nome_servidor = 'localhost'
-        self.porta_servidor = porta
-        self.endereco_servidor = (self.nome_servidor, self.porta_servidor)
+        self.endereco_servidor = endereco
+        self.nome_servidor = self.endereco_servidor[0]
+        self.porta_servidor = self.endereco_servidor[1]
         # Socket:
         self.socket = socket(AF_INET, SOCK_DGRAM)
         self.socket.bind(self.endereco_servidor)
@@ -24,32 +24,47 @@ class AC:
         # Chaves publicas:
         self.chaves_dict = {}
         # Thread:
-        self.thread = Thread(target=self.rodando, args=())
-
+        self.thread_rodando = Thread(target=self.rodando, args=())
+        self.thread_receber_mensagens = Thread(target=self.receber, args=())
+    
     def iniciar(self):
-        self.thread.start()
+        self.thread_rodando.start()
+        self.thread_receber_mensagens.start()
 
     def rodando(self):
+        pass
+
+    def receber(self):
         while True:
             mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
             mensagem_recebida = mensagem_recebida.decode()
             m = Mensagem()
             m.string_para_info(mensagem_recebida)
-            if m.tipo == Tipo.CRIAR_CHAVE:
+            if m.tipo == TipoMensagem.CRIAR_CHAVE:
+                print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
                 self.faz_registro(endereco_remetente)
-                print(f"{self.nome} : pedido \'\'CriarChave\'\' de {endereco_remetente}")
     
+    # - Registrar PC:
     def faz_registro(self, endereco):
         chave_publica, chave_privada = self.criar_chave()
-        #self.socket.sendto(chave_privada, endereco)
+        self.armazenar_chave_publica(chave_publica, endereco)
+        self.envia_chave_privada(chave_privada, endereco)
 
     def criar_chave(self):
         c_pub, c_priv = rsa.newkeys(320)
         return c_pub, c_priv
+    
+    def armazenar_chave_publica(self, chave_publica, endereco_pc):
+        self.chaves_dict[endereco_pc] = chave_publica
+    
+    def envia_chave_privada(self, chave_privada, endereco_pc):
+        chave_string = self.chave_para_string(chave_privada)
+        print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
+        #m = Mensagem()
+        #m_string = m.info_para_string()
+        #self.socket.sendto(m_string.encode(), endereco_pc)
 
-    def buffer_add(self, mensagem):
-        self.buffer.append(mensagem)
-
+    # - Sets:
     def set_con_1(self, con):
         self.con_1 = con
     
@@ -68,8 +83,41 @@ class AC:
     def set_con_6(self, con):
         self.con_6 = con
 
-def conectar_PC_AC(pc, ac, con_num):
-    if isinstance(con_num, int) and con_num >= 1 and con_num <= 6:
-        set_con = getattr(ac, f"set_con_{con_num}")
-        set_con(pc.endereco_servidor)
-        pc.con_ac = ac.endereco_servidor
+    # Conecta a AC a um endereço.
+    def ac_conectar(self, tipo, endereco):
+        if tipo == TipoCon.CON_1:
+            self.set_con_1(endereco)
+        elif tipo == TipoCon.CON_2:
+            self.set_con_2(endereco)
+        elif tipo == TipoCon.CON_3:
+            self.set_con_3(endereco)
+        elif tipo == TipoCon.CON_4:
+            self.set_con_4(endereco)
+        elif tipo == TipoCon.CON_5:
+            self.set_con_5(endereco)
+        elif tipo == TipoCon.CON_6:
+            self.set_con_6(endereco)
+
+    # - Transforma Chaves:
+    def chave_para_string(self, chave):
+        divisor = "*-*"
+        s = ""
+        if isinstance(chave, rsa.PrivateKey):
+            s = "Privada"
+            informacoes = [chave.n, chave.e, chave.d, chave.p, chave.q]
+            for info in informacoes:
+                s = s + divisor + str(info)
+        elif isinstance(chave, rsa.PublicKey):
+            s = "Publica"
+            informacoes = [chave.n, chave.e]
+            for info in informacoes:
+                s = s + divisor + str(info)
+        return s
+
+class TipoCon():
+    CON_1 = 1
+    CON_2 = 2
+    CON_3 = 3
+    CON_4 = 4
+    CON_5 = 5
+    CON_6 = 6  
