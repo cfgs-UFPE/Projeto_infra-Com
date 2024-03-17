@@ -44,6 +44,7 @@ class Mensagem:
             elif isinstance(valor_tipo, str):
                 self.tipo = int(valor_tipo)
 
+    # - Sets:
     def set_origem_endereco(self, origem_endereco):
         if origem_endereco != None:
             self.set_origem_nome_servidor(origem_endereco[0])
@@ -69,6 +70,7 @@ class Mensagem:
     def set_dados(self, valor_dados):
         self.dados = valor_dados
 
+# Enum dos tipos de mensagens.
 class TipoMensagem():
     NADA = 0
     CRIAR_CHAVE = 1

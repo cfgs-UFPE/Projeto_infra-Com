@@ -26,38 +26,48 @@ class AC:
         # Thread:
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
     
+    # Inicia a(s) thread(s) de AC. 
     def iniciar(self):
         self.thread_receber_mensagens.start()
 
+    # Thread que fica recebendo as mensagens.
     def receber(self):
         while True:
+            # Recebe mensagem.
             mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
             mensagem_recebida = mensagem_recebida.decode()
+            # transformar a mensagem recebida em um objeto Mensagem.
             m = Mensagem()
             m.string_para_info(mensagem_recebida)
+            # Trata as mensagens de acordo com o tipo.
             if m.tipo == TipoMensagem.CRIAR_CHAVE:
-                print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
+                #print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
                 self.faz_registro(endereco_remetente)
     
     # - Registrar PC:
+    # Executa as funções que fazem o registro de PC em AC: cria as chaves, armazena a chave publica
+    # e envia a chave privada.
     def faz_registro(self, endereco):
         chave_publica, chave_privada = self.criar_chave()
         self.armazenar_chave_publica(chave_publica, endereco)
         self.envia_chave_privada(chave_privada, endereco)
 
+    # Função que cria as chaves publica e privada.
     def criar_chave(self):
         c_pub, c_priv = rsa.newkeys(320)
         return c_pub, c_priv
     
+    # Função que armazena a chave publica em um dicionario onde a chave é o endereço do PC.
     def armazenar_chave_publica(self, chave_publica, endereco_pc):
         self.chaves_dict[endereco_pc] = chave_publica
     
+    # Função que envia a chave privada para o PC.
     def envia_chave_privada(self, chave_privada, endereco_pc):
         chave_string = self.chave_para_string(chave_privada)
-        print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
         m = Mensagem(TipoMensagem.CHAVE_PRIVADA, self.endereco_servidor, endereco_pc, chave_string)
         m_string = m.info_para_string()
         self.socket.sendto(m_string.encode(), endereco_pc)
+        print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
 
     # - Sets:
     def set_con_1(self, con):
@@ -93,7 +103,7 @@ class AC:
         elif tipo == TipoCon.CON_6:
             self.set_con_6(endereco)
 
-    # - Transforma Chaves:
+    # Converte uma chave para uma string.
     def chave_para_string(self, chave):
         divisor = "---"
         s = ""
@@ -109,6 +119,7 @@ class AC:
                 s = s + divisor + str(info)
         return s
 
+# Enum das conexões de AC.
 class TipoCon():
     CON_1 = 1
     CON_2 = 2

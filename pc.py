@@ -23,19 +23,24 @@ class PC:
         # Thread:
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
     
+    # Inicia o PC, fazendo ele se regstrar na AC e e iniciando suas threads. 
     def iniciar(self):
         self.registrar_em_ac()
         self.thread_receber_mensagens.start()
 
+    # Thread que fica recebendo as mensagens.
     def receber(self):
         while True:
+            # Recebe mensagem.
             mensagem_recebida, endereco_remetente = self.socket.recvfrom(2048)
             mensagem_recebida = mensagem_recebida.decode()
+            # transformar a mensagem recebida em um objeto Mensagem.
             m = Mensagem()
             m.string_para_info(mensagem_recebida)
+            # Trata as mensagens de acordo com o tipo.
             if m.tipo == TipoMensagem.CHAVE_PRIVADA:
                 self.chave_privada = self.string_para_chave(m.dados)
-                print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {endereco_remetente}.")
+                #print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {endereco_remetente}.")
     
     # Faz PC se registrar na Autoridade Certificadora.
     def registrar_em_ac(self):
@@ -63,6 +68,7 @@ class PC:
         elif tipo == TipoCon.CON_AC:
             self.set_con_ac(endereco)
     
+    # Converte a string de uma chave em uma chave.
     def string_para_chave(self, string):
         divisor = "---"
         s = string.split(divisor)
@@ -75,6 +81,7 @@ class PC:
             chave = rsa.PublicKey(info[0], info[1])
         return chave
 
+# Enum das conexões de PC.
 class TipoCon():
     CON_1 = 1
     CON_2 = 2
