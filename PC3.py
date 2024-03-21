@@ -1,16 +1,20 @@
+from app_conversa import *
 from pc import *
-import Inicializacao
+import geral
 import os
 
 nome = "PC3"
-endereco = Inicializacao.enderecos[nome]
+endereco = geral.enderecos[nome]
 
 os.system("title " + nome)
 
-pc = PC(nome, endereco)
-pc.pc_conectar(TipoCon.CON_2, Inicializacao.enderecos["PC4"])
-pc.pc_conectar(TipoCon.CON_1, Inicializacao.enderecos["PC2"])
-pc.pc_conectar(TipoCon.CON_AC, Inicializacao.enderecos["AC"])
+app_conversa = APP(nome, "PC1", "PC2", "PC4", "PC5", "PC6")
+
+pc = PC(nome, endereco, app_conversa)
+pc.pc_conectar(TipoCon.CON_2, geral.enderecos["PC4"])
+pc.pc_conectar(TipoCon.CON_1, geral.enderecos["PC2"])
+pc.pc_conectar(TipoCon.CON_AC, geral.enderecos["AC"])
 print("> > " + nome + " < <")
-input("Enter para iniciar")
+#input("Enter para iniciar")
+time.sleep(1)
 pc.iniciar()

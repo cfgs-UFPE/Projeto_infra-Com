@@ -1,11 +1,13 @@
 from mensagem import *
+from app_conversa import *
+import geral as g
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
 import rsa
 import time
 
 class PC:
-    def __init__(self, nome, endereco):
+    def __init__(self, nome, endereco, app_conversa):
         # Preparando informações de PC:
         self.nome = nome
         self.endereco_servidor = endereco
@@ -20,15 +22,47 @@ class PC:
         self.con_ac = None
         # Chaves privada:
         self.chave_privada = None
+        # Buffer:
+        self.mensagens_lista = []
+        # APP:
+        self.app = app_conversa
         # Thread:
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
+        self.thread_rodando = Thread(target=self.rodando, args=())
     
-    # Inicia o PC, fazendo ele se regstrar na AC e e iniciando suas threads. 
+    # Inicia o PC, fazendo ele se regstrar na AC, inicia suas threads e app. 
     def iniciar(self):
-        self.registrar_em_ac()
+        #self.registrar_em_ac()
+        self.thread_rodando.start()
         self.thread_receber_mensagens.start()
+        self.app.iniciar(self)
 
-    # Thread que fica recebendo as mensagens.
+    # # Thread que fica em loop tratando as mensagens da lista de mensagens.
+    def rodando(self):
+        while True:
+            if len(self.mensagens_lista) > 0:
+                m = self.mensagens_lista[0]
+                if isinstance(m, Mensagem):
+                    # Mensagem não é para esse PC: manda para onde tem que ir
+                    if m.get_destino_endereco() != self.endereco_servidor:
+                            m_string = m.info_para_string()
+                            # *Adicionar* verificar tabela de forwarding para mandar
+                            self.socket.sendto(m_string.encode(), m.get_destino_endereco())
+                            self.mensagens_lista.pop(0)
+                    # Mensagem é para esse PC: trata de acordo com o tipo.
+                    else:
+                        if m.tipo == TipoMensagem.CHAVE_PRIVADA:
+                                self.chave_privada = self.string_para_chave(m.dados)
+                                # *teste* print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {m.get_origem_endereco()}.")
+                        elif m.tipo == TipoMensagem.APP:
+                            if m.get_destino_endereco() == self.endereco_servidor:
+                                self.app.receber_mensagens(m.dados)
+                                self.mensagens_lista.pop(0)
+                else:
+                    self.mensagens_lista.pop(0)
+
+
+    # Thread que fica em loop recebendo as mensagens e mandando para a lista de mensagens.
     def receber(self):
         while True:
             # Recebe mensagem.
@@ -37,10 +71,8 @@ class PC:
             # transformar a mensagem recebida em um objeto Mensagem.
             m = Mensagem()
             m.string_para_info(mensagem_recebida)
-            # Trata as mensagens de acordo com o tipo.
-            if m.tipo == TipoMensagem.CHAVE_PRIVADA:
-                self.chave_privada = self.string_para_chave(m.dados)
-                #print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {endereco_remetente}.")
+            # Adiciona mensagem a lista.
+            self.add_mensagem_lista(m)
     
     # Faz PC se registrar na Autoridade Certificadora.
     def registrar_em_ac(self):
@@ -70,7 +102,7 @@ class PC:
     
     # Converte a string de uma chave em uma chave.
     def string_para_chave(self, string):
-        divisor = "---"
+        divisor = g.divisor_dados
         s = string.split(divisor)
         info = []
         for i in range(1, len(s)):
@@ -80,6 +112,11 @@ class PC:
         elif s == "Publica":
             chave = rsa.PublicKey(info[0], info[1])
         return chave
+
+    # Adiciona uma mensagem ao buffer.
+    def add_mensagem_lista(self, mensagem):
+        if isinstance(mensagem, Mensagem):
+            self.mensagens_lista.append(mensagem)
 
 # Enum das conexões de PC.
 class TipoCon():

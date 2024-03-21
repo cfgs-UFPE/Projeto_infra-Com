@@ -1,4 +1,5 @@
 from mensagem import *
+import geral as g
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
 import rsa
@@ -26,11 +27,11 @@ class AC:
         # Thread:
         self.thread_receber_mensagens = Thread(target=self.receber, args=())
     
-    # Inicia a(s) thread(s) de AC. 
+    # Inicia a thread de AC. 
     def iniciar(self):
         self.thread_receber_mensagens.start()
 
-    # Thread que fica recebendo as mensagens.
+    # # Thread que fica em loop recebendo e tratando as mensagens.
     def receber(self):
         while True:
             # Recebe mensagem.
@@ -41,7 +42,7 @@ class AC:
             m.string_para_info(mensagem_recebida)
             # Trata as mensagens de acordo com o tipo.
             if m.tipo == TipoMensagem.CRIAR_CHAVE:
-                #print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
+                # *teste* print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
                 self.faz_registro(endereco_remetente)
     
     # - Registrar PC:
@@ -54,7 +55,7 @@ class AC:
 
     # Função que cria as chaves publica e privada.
     def criar_chave(self):
-        c_pub, c_priv = rsa.newkeys(320)
+        c_priv, c_pub = rsa.gerar_chaves()
         return c_pub, c_priv
     
     # Função que armazena a chave publica em um dicionario onde a chave é o endereço do PC.
@@ -67,7 +68,7 @@ class AC:
         m = Mensagem(TipoMensagem.CHAVE_PRIVADA, self.endereco_servidor, endereco_pc, chave_string)
         m_string = m.info_para_string()
         self.socket.sendto(m_string.encode(), endereco_pc)
-        print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
+        # *teste* print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
 
     # - Sets:
     def set_con_1(self, con):
@@ -105,7 +106,7 @@ class AC:
 
     # Converte uma chave para uma string.
     def chave_para_string(self, chave):
-        divisor = "---"
+        divisor = g.divisor_dados
         s = ""
         if isinstance(chave, rsa.PrivateKey):
             s = "Privada"
@@ -126,4 +127,4 @@ class TipoCon():
     CON_3 = 3
     CON_4 = 4
     CON_5 = 5
-    CON_6 = 6  
+    CON_6 = 6
