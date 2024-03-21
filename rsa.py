@@ -1,21 +1,14 @@
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
-import base64
+import rsa 
 
-def gerar_chaves():
-    chave = RSA.generate(2048)
-    chave_privada = chave.export_key()
-    chave_publica = chave.publickey().export_key()
-    return chave_privada, chave_publica
+def decriptar(cifra, chave_privada_encriptada):
+    pass
+    chave_privada = chave_privada_encriptada
+    mensagem = rsa.decrypt(cifra, chave_privada) # aqui o código decripta a cifra usando a chave privada do computador
+    return mensagem
 
-def cifrar_mensagem(mensagem, chave_publica):
-    chave = RSA.import_key(chave_publica)
-    cifra = PKCS1_OAEP.new(chave)
-    mensagem_cifrada = cifra.encrypt(mensagem)
-    return mensagem_cifrada
+def encriptar(mensagem, remetente, dest):
+    pass
+    chave_publica = chaves_dict[dest] # aqui o remetente pega a chave pública do destinatário.
+    cifra = rsa.encrypt(mensagem, chave_publica) # aqui o código encripta a mengagem usando a chave pública.
+    return cifra 
 
-def decifrar_mensagem(mensagem_cifrada, chave_privada):
-    chave = RSA.import_key(chave_privada)
-    cifra = PKCS1_OAEP.new(chave)
-    mensagem_decifrada = cifra.decrypt(mensagem_cifrada)
-    return mensagem_decifrada
