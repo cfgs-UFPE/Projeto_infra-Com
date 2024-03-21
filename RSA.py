@@ -34,12 +34,7 @@ def decriptar(cifra, chave_privada_encriptada):
 
     return mensagem
 
-def encriptar(mensagem, remetente, dest):
-   
-    chave_publica = chaves_dict[dest] # aqui o remetente pega a chave pública do destinatário.
-
-    if chave_publica == NULL: # caso o pc ainda não tenha sido registrado na autoridade certificadora.
-        raise OSError('não há registro')
+def encriptar(mensagem, chave_publica):
 
     cifra = rsa.encrypt(mensagem, chave_publica) # aqui o código encripta a mengagem usando a chave pública.
 
