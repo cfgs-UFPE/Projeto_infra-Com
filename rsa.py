@@ -1,7 +1,29 @@
 import rsa 
+from Crypto.Cipher import AES
+
+def encriptar_chave_privada(chave_privada):
+    
+    chave = "InfraCom é a melhor cadeira do CIn."
+
+    encriptador = AES.new(chave, AES.MODE_EAX, nonce = nonce)
+
+    chave_privada_encriptada = encriptador.encrypt(chave_privada)
+
+    return chave
+
+def decriptar_chave_privada(chave_privada_encriptada):
+
+    chave = "InfraCom é a melhor cadeira do CIn"
+
+    decriptador = AES.new('chave', AES.MODE_EAX, nonce = nonce)
+
+    message = decriptador.decrypt(chave_privada_encriptada)
+
+    return message
+
 
 def decriptar(cifra, chave_privada_encriptada):
-    pass
+
 
     chave_privada = chave_privada_encriptada
 
