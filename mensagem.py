@@ -44,7 +44,6 @@ class Mensagem:
             elif isinstance(valor_tipo, str):
                 self.tipo = int(valor_tipo)
 
-    # - Sets:
     def set_origem_endereco(self, origem_endereco):
         if origem_endereco != None:
             self.set_origem_nome_servidor(origem_endereco[0])
@@ -54,6 +53,8 @@ class Mensagem:
         self.origem_nome_servidor = valor_origem_nome_servidor
     
     def set_origem_porta_servidor(self, valor_origem_porta_servidor):
+        if isinstance(valor_origem_porta_servidor, str):
+            valor_origem_porta_servidor = int(valor_origem_porta_servidor)
         self.origem_porta_servidor = valor_origem_porta_servidor
     
     def set_destino_endereco(self, destino_endereco):
@@ -65,13 +66,23 @@ class Mensagem:
         self.destino_nome_servidor = valor_destino_nome_servidor
     
     def set_destino_porta_servidor(self, valor_destino_porta_servidor):
+        if isinstance(valor_destino_porta_servidor, str):
+            valor_destino_porta_servidor = int(valor_destino_porta_servidor)
         self.destino_porta_servidor = valor_destino_porta_servidor
     
     def set_dados(self, valor_dados):
         self.dados = valor_dados
 
+    # - Gets:
+    def get_origem_endereco(self):
+        return (self.origem_nome_servidor, self.origem_porta_servidor)
+    
+    def get_destino_endereco(self):
+        return (self.destino_nome_servidor, self.destino_porta_servidor)
+
 # Enum dos tipos de mensagens.
-class TipoMensagem():
+class TipoMensagem:
     NADA = 0
     CRIAR_CHAVE = 1
     CHAVE_PRIVADA = 2
+    APP = 3
