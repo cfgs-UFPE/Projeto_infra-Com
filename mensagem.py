@@ -87,4 +87,6 @@ class TipoMensagem:
     CHAVE_PRIVADA = 2
     APP = 3
     PEDIDO_CHAVE_PUBLICA = 4
-    CHAVE_PUBLICA = 5
+    PEDIR_CHAVE = 5
+    CHAVE_PUBLICA = 6
+    ENCRIPTAR = 7
