@@ -131,7 +131,7 @@ class APP:
         if self.estado_atual == EstadosApp.CONVERSA:
             self.titulo_print()
             self.estado_conversa_print()
-            print(" > ", end="")
+            print(" > ", end=" ")
     
     # Retorna o número da conversa de acordo com o contato.
     def identificar_conversa(self, contato):

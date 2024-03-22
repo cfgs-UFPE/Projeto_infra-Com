@@ -1,9 +1,10 @@
 from mensagem import *
 from app_conversa import *
+from Dijkstra import *
 import geral as g
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
-import rsa
+import criptar
 import time
 
 class PC:
@@ -20,6 +21,9 @@ class PC:
         self.con_1 = None
         self.con_2 = None
         self.con_ac = None
+        # Roteamento:
+        self.roteamento = Roteamento(self.nome)
+        self.tabela_forwarding = self.roteamento.criar_tabela_forwarding()
         # Chaves privada:
         self.chave_privada = None
         # Buffer:
@@ -32,7 +36,7 @@ class PC:
     
     # Inicia o PC, fazendo ele se regstrar na AC, inicia suas threads e app. 
     def iniciar(self):
-        #self.registrar_em_ac()
+        self.registrar_em_ac()
         self.thread_rodando.start()
         self.thread_receber_mensagens.start()
         self.app.iniciar(self)
@@ -46,13 +50,19 @@ class PC:
                     # Mensagem não é para esse PC: manda para onde tem que ir
                     if m.get_destino_endereco() != self.endereco_servidor:
                             m_string = m.info_para_string()
-                            # *Adicionar* verificar tabela de forwarding para mandar
-                            self.socket.sendto(m_string.encode(), m.get_destino_endereco())
+                            mandar_para = self.tabela_forwarding[m.get_destino_endereco()]
+                            com_num = self.coneccao_por_endereco(mandar_para)
+                            if com_num == TipoCon.CON_1:
+                                self.socket.sendto(m_string.encode(), self.con_1)
+                            if com_num == TipoCon.CON_2:
+                                self.socket.sendto(m_string.encode(), self.con_2)
+                            # *teste* print(f"mandou por com_{com_num}")
                             self.mensagens_lista.pop(0)
                     # Mensagem é para esse PC: trata de acordo com o tipo.
                     else:
                         if m.tipo == TipoMensagem.CHAVE_PRIVADA:
                                 self.chave_privada = self.string_para_chave(m.dados)
+                                self.mensagens_lista.pop(0)
                                 # *teste* print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {m.get_origem_endereco()}.")
                         elif m.tipo == TipoMensagem.APP:
                             if m.get_destino_endereco() == self.endereco_servidor:
@@ -100,6 +110,15 @@ class PC:
         elif tipo == TipoCon.CON_AC:
             self.set_con_ac(endereco)
     
+    # Retorna a conecção por endereco.
+    def coneccao_por_endereco(self, endereco):
+        if endereco == self.con_1:
+            return TipoCon.CON_1
+        elif endereco == self.con_2:
+            return TipoCon.CON_2
+        elif endereco == self.con_ac:
+            return TipoCon.CON_AC
+
     # Converte a string de uma chave em uma chave.
     def string_para_chave(self, string):
         divisor = g.divisor_dados
@@ -108,9 +127,9 @@ class PC:
         for i in range(1, len(s)):
             info.append(int(s[i]))
         if s[0] == "Privada":
-            chave = rsa.PrivateKey(info[0], info[1], info[2], info[3], info[4])
+            chave = criptar.rsa.PrivateKey(info[0], info[1], info[2], info[3], info[4])
         elif s == "Publica":
-            chave = rsa.PublicKey(info[0], info[1])
+            chave = criptar.rsa.PublicKey(info[0], info[1])
         return chave
 
     # Adiciona uma mensagem ao buffer.

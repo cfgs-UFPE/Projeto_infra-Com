@@ -2,7 +2,7 @@ from mensagem import *
 import geral as g
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
-import rsa
+import criptar
 import time
 
 class AC:
@@ -44,6 +44,9 @@ class AC:
             if m.tipo == TipoMensagem.CRIAR_CHAVE:
                 # *teste* print(f"{self.nome} : {endereco_remetente} pediu para \'CriarChave\'.")
                 self.faz_registro(endereco_remetente)
+            elif m.tipo == TipoMensagem.PEDIDO_CHAVE_PUBLICA:
+                endereco_destino, p_chave = self.obter_chave(m.dados)
+                self.envia_chave_publica(m.get_origem_endereco(), p_chave)
     
     # - Registrar PC:
     # Executa as funções que fazem o registro de PC em AC: cria as chaves, armazena a chave publica
@@ -55,7 +58,7 @@ class AC:
 
     # Função que cria as chaves publica e privada.
     def criar_chave(self):
-        c_priv, c_pub = rsa.gerar_chaves()
+        c_pub, c_priv = criptar.rsa.newkeys(320)
         return c_pub, c_priv
     
     # Função que armazena a chave publica em um dicionario onde a chave é o endereço do PC.
@@ -69,6 +72,22 @@ class AC:
         m_string = m.info_para_string()
         self.socket.sendto(m_string.encode(), endereco_pc)
         # *teste* print(f"{self.nome} : Mandou chave {chave_privada} para {endereco_pc}.")
+
+    # - Pegar chave publica:
+    def obter_chave(self, endereco_str):
+        divisor = g.divisor_dados
+        endereco_partes = endereco_str.split(divisor)
+        endereco = (endereco_partes[0], int(endereco_partes[1]))
+        chave = self.chaves_dict[endereco]
+        return endereco, chave
+    
+    def envia_chave_publica(self, endereco_origem, endereco_destino, chave):
+        divisor = g.divisor_dados
+        chave_string = self.chave_para_string(chave)
+        dados = endereco_destino + divisor + chave_string
+        m = Mensagem(TipoMensagem.CHAVE_PUBLICA, self.endereco_servidor, endereco_origem,  dados)
+        m_string = m.info_para_string()
+        self.socket.sendto(m_string.encode(), endereco_origem)
 
     # - Sets:
     def set_con_1(self, con):
@@ -108,12 +127,12 @@ class AC:
     def chave_para_string(self, chave):
         divisor = g.divisor_dados
         s = ""
-        if isinstance(chave, rsa.PrivateKey):
+        if isinstance(chave, criptar.rsa.PrivateKey):
             s = "Privada"
             informacoes = [chave.n, chave.e, chave.d, chave.p, chave.q]
             for info in informacoes:
                 s = s + divisor + str(info)
-        elif isinstance(chave, rsa.PublicKey):
+        elif isinstance(chave, criptar.rsa.PublicKey):
             s = "Publica"
             informacoes = [chave.n, chave.e]
             for info in informacoes:
