@@ -1,0 +1,12 @@
+Instruções para executar
+
+1- Se o ambiente virtual não funcionar será preciso baixar as bibliotecas que estão no arquivo "requerimento.txt", copiando o comando 
+"pip install -r requerimento.txt"
+
+
+2- É possivel executar os PCs de forma individual (cada um em um prompt), porém, para executar todos de uma vez será usado:
+
+- Para Windows: "main(win).py"
+- Para Linux: "main(linux).py"
+
+*OBS: Se o main não funcionar, execute a AC e os PCs de forma individual (execute a AC primeiro)
