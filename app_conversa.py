@@ -1,10 +1,15 @@
 from mensagem import *
 import geral as g
 from threading import Thread
+import os
 
 class APP:
     def __init__(self, nome, c1, c2, c3, c4, c5):
+        # Informações de uso:
         self.nome = nome
+        # Estados:
+        self.estado_atual = EstadosApp.INICIO
+        self.conversa_atual = None
         # Contatos com quem tá conversando:
         self.contato_1 = c1
         self.contato_2 = c2
@@ -18,8 +23,9 @@ class APP:
         self.papo_3 = []
         self.papo_4 = []
         self.papo_5 = []
-        self.esperando_resposta = {}
-        self.prepara_esperando_resposta()
+        self.papos_lista = [self.papo_1, self.papo_2, self.papo_3, self.papo_4, self.papo_5]
+        '''self.esperando_resposta = {}
+        self.prepara_esperando_resposta()'''
         # PC:
         self.pc = None
         # Thread:
@@ -34,51 +40,112 @@ class APP:
     def rodando(self):
         loop = True
         while loop:
-            if self.pode_mandar_mensagem():
-                self.mandar_mensagens(self.pc)
+            # Print:
+            self.titulo_print()
+            if self.estado_atual == EstadosApp.INICIO:
+                self.estado_inicio_print()
+            elif self.estado_atual == EstadosApp.CONVERSA:
+                self.estado_conversa_print()
+            # Comando:
+            comando = input(" > ")
+            comando = comando.lower()
+            if self.estado_atual == EstadosApp.INICIO:
+                self.estado_inicio_comandos(comando)
+            elif self.estado_atual == EstadosApp.CONVERSA:
+                self.estado_conversa_comandos(comando)
+    
+    # -- Rodando aplicação:
+    # - Prints:
+    def titulo_print(self):
+        os.system("cls")
+        print(" -- APP CONVERSAS --")
 
-    # Manda 5 mensagens, uma para cada contato.
-    def mandar_mensagens(self, pc):
-        for i in range(1,6):
-            # Prepara informações.
-            contato = getattr(self, f"contato_{i}")
-            papo = getattr(self, f"papo_{i}")
-            n = self.numero_da_mensagem(papo)
-            texto = "MSG" + str(n) #texto = input("Teste:")
-            # Cria a mensagem.
-            divisor = g.divisor_dados
-            dados = self.nome + divisor + "msg" + divisor + texto
-            m = Mensagem(TipoMensagem.APP, pc.endereco_servidor, g.enderecos[contato], dados)
-            # Adiciona mensagem a conversa.
-            papo.append([self.nome, texto])
-            self.esperando_resposta[contato] = True
-            # Mada mensagem para a lista de mensagens de pc, para que ele envie a mensagem.
-            pc.add_mensagem_lista(m)
-
-    # Recebe as informações das mensagens que pc encaminhar para o app e registra em uma das conversas (papos).
-    def receber_mensagens(self, mensagem):
-        pass
+    def estado_inicio_print(self):
+            print(" CONVERSAS")
+            print()
+            for i in range(len(self.contatos_lista)):
+                print(f" {i+1} - " + self.contatos_lista[i])
+            print()
+            print(" Comandos:")
+            print(" - <entrar x> -> entra na conversa de número x.")
+            print()
+            print()
     
-    # Preenche o dicionario esperando_resposta.
-    def prepara_esperando_resposta(self):
-        self.esperando_resposta[self.contato_1] = False
-        self.esperando_resposta[self.contato_2] = False
-        self.esperando_resposta[self.contato_3] = False
-        self.esperando_resposta[self.contato_4] = False
-        self.esperando_resposta[self.contato_5] = False
-    
-    # Verifica se pode mandar novas mensagens, só vai ser true se não estiver esperando resposta de nenhum contato.
-    def pode_mandar_mensagem(self):
-        valor = True
-        for k in self.esperando_resposta.keys():
-            if self.esperando_resposta[k] == True:
-                valor = False
-                break
-        return valor
-    
-    def numero_da_mensagem(self, papo):
-        contador = 0
+    def estado_conversa_print(self):
+        print(f" CONVERSA COM {self.contatos_lista[self.conversa_atual]}")
+        print()
+        papo = self.papos_lista[self.conversa_atual]
         for m in papo:
-            if m[0] == self.nome:
-                contador += 1
-        return contador
+            autor = m[0]
+            texto = m[1]
+            print(f" {autor}: {texto}")
+        print()
+        print(" Comandos:")
+        print(" - <sair> -> sai da conversa e volta para a lista de contatos.")
+        print(" - <msg> -> comando para mandar uma mensagem.")
+        print()
+        print()
+
+    # - Comandos:
+    def estado_inicio_comandos(self, comando):
+        lista_comando = comando.split(" ")
+        if len(lista_comando) == 2:
+            if lista_comando[0] == "entrar":
+                if lista_comando[1].isdigit():
+                    numero = int(lista_comando[1])
+                    if numero >= 1 and numero <= 5:
+                        self.conversa_atual = numero - 1
+                        self.estado_atual = EstadosApp.CONVERSA
+                        # *teste* print(self.conversa_atual)
+                        # *teste* input()
+    
+    def estado_conversa_comandos(self, comando):
+        if comando == "sair":
+            self.estado_atual = EstadosApp.INICIO
+        elif comando == "msg":
+            print()
+            texto = input(" Escreva sua mensagem: ")
+            self.mandar_mensagens(self.pc, self.conversa_atual, texto)
+
+    # Mensagens:
+    # Manda mensagem para contato que está conversando.
+    def mandar_mensagens(self, pc, conversa, mensagem):
+        # Prepara informações.
+        contato = self.contatos_lista[conversa]
+        papo = self.papos_lista[conversa]
+        # Cria a mensagem.
+        divisor = g.divisor_dados
+        dados = self.nome + divisor + mensagem
+        m = Mensagem(TipoMensagem.ENCRIPTAR, pc.endereco_servidor, g.enderecos[contato], dados)
+        # Adiciona mensagem a conversa.
+        papo.append([self.nome, mensagem])
+        # Mada mensagem para a lista de mensagens de pc, para que ele envie a mensagem.
+        pc.add_mensagem_lista(m)
+
+    # Recebe as mensagens que pc encaminhar para o app e guarda em uma das conversas (papos).
+    def receber_mensagens(self, mensagem):
+        divisor = g.divisor_dados
+        m = mensagem.split(divisor)
+        conversa = self.identificar_conversa(m[0])
+        self.papos_lista[conversa].append(m)
+        if self.estado_atual == EstadosApp.CONVERSA:
+            self.titulo_print()
+            self.estado_conversa_print()
+            #print(" > ", end=" ")
+    
+    # Retorna o número da conversa de acordo com o contato.
+    def identificar_conversa(self, contato):
+        if contato == self.contato_1:
+            return 0
+        elif contato == self.contato_2:
+            return 1
+        elif contato == self.contato_3:
+            return 2
+        elif contato == self.contato_4:
+            return 3
+        elif contato == self.contato_5:
+            return 4
+
+class EstadosApp:
+    INICIO = 0
+    CONVERSA = 1

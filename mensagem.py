@@ -81,8 +81,11 @@ class Mensagem:
         return (self.destino_nome_servidor, self.destino_porta_servidor)
 
 # Enum dos tipos de mensagens.
-class TipoMensagem():
+class TipoMensagem:
     NADA = 0
     CRIAR_CHAVE = 1
     CHAVE_PRIVADA = 2
     APP = 3
+    PEDIDO_CHAVE_PUBLICA = 4
+    CHAVE_PUBLICA = 5
+    ENCRIPTAR = 6
