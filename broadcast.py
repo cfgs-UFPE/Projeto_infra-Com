@@ -4,17 +4,26 @@ import geral
 
 def broadcast(mensagem, enderecos):
 
-    socket = socket(AF_INET, SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
  
-    socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     
     while True:
-        for i in range(len(enderecos.keys())):
+        for i in range(6):
 
-            porta = enderecos[i][1]
+            porta = 1234
             
-            socket.bind(enderecos[i][0], porta)
-            sock.sendto(mensagem, (< broadcast >, porta))
+            sock.bind(('127.0.0.1', 4526))
+            sock.sendto(mensagem, ('127.0.0.1', porta))
             sock.close()
 
+            print("mensagem enviada!")
+
             time.sleep(2)
+
+    
+mensagem = 'Hello World'
+
+enderecos = geral.enderecos
+
+broadcast(mensagem, enderecos.values())
