@@ -46,7 +46,7 @@ class AC:
                 self.faz_registro(endereco_remetente)
             elif m.tipo == TipoMensagem.PEDIDO_CHAVE_PUBLICA:
                 endereco_destino, p_chave = self.obter_chave(m.dados)
-                self.envia_chave_publica(m.get_origem_endereco(), p_chave)
+                self.envia_chave_publica(m.get_origem_endereco(), endereco_destino, p_chave)
     
     # - Registrar PC:
     # Executa as funções que fazem o registro de PC em AC: cria as chaves, armazena a chave publica
@@ -84,7 +84,7 @@ class AC:
     def envia_chave_publica(self, endereco_origem, endereco_destino, chave):
         divisor = g.divisor_dados
         chave_string = self.chave_para_string(chave)
-        dados = endereco_destino + divisor + chave_string
+        dados = str(endereco_destino[0]) + divisor + str(endereco_destino[1]) + divisor + chave_string
         m = Mensagem(TipoMensagem.CHAVE_PUBLICA, self.endereco_servidor, endereco_origem,  dados)
         m_string = m.info_para_string()
         self.socket.sendto(m_string.encode(), endereco_origem)

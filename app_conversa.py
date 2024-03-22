@@ -116,7 +116,7 @@ class APP:
         # Cria a mensagem.
         divisor = g.divisor_dados
         dados = self.nome + divisor + mensagem
-        m = Mensagem(TipoMensagem.APP, pc.endereco_servidor, g.enderecos[contato], dados)
+        m = Mensagem(TipoMensagem.ENCRIPTAR, pc.endereco_servidor, g.enderecos[contato], dados)
         # Adiciona mensagem a conversa.
         papo.append([self.nome, mensagem])
         # Mada mensagem para a lista de mensagens de pc, para que ele envie a mensagem.
@@ -131,7 +131,7 @@ class APP:
         if self.estado_atual == EstadosApp.CONVERSA:
             self.titulo_print()
             self.estado_conversa_print()
-            print(" > ", end=" ")
+            #print(" > ", end=" ")
     
     # Retorna o número da conversa de acordo com o contato.
     def identificar_conversa(self, contato):

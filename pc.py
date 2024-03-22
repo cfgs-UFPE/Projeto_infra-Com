@@ -51,12 +51,15 @@ class PC:
                     # Mensagem não é para esse PC: manda para onde tem que ir
                     if m.get_destino_endereco() != self.endereco_servidor:
                             m_string = m.info_para_string()
+                            # Manda mensagem para AC.
                             if m.get_destino_endereco() == self.con_ac:
                                 self.socket.sendto(m_string.encode(), self.con_ac)
+                            # Manda mensagem para uma lista para esperar ser encriptada e pede para AC mandar a chave publica.  
                             elif m.tipo == TipoMensagem.ENCRIPTAR:
                                 self.mensagens_encriptar_lista.append(m)
                                 destino = m.get_destino_endereco()
-                                dados = destino[0] + str(destino[1])
+                                divisor = g.divisor_dados
+                                dados = destino[0] + divisor + str(destino[1])
                                 m_pede_chave = Mensagem(TipoMensagem.PEDIDO_CHAVE_PUBLICA, self.endereco_servidor, self.con_ac, dados)
                                 self.add_mensagem_lista(m_pede_chave)
                             else:
@@ -74,7 +77,14 @@ class PC:
                                 # *teste* print(f"{self.nome} : recebeu chave privada {self.chave_privada} de {m.get_origem_endereco()}.")
                         elif m.tipo == TipoMensagem.APP:
                             if m.get_destino_endereco() == self.endereco_servidor:
-                                self.app.receber_mensagens(m.dados)
+                                dados_decodificados = criptar.decriptar(m.dados, self.chave_privada)
+                                self.app.receber_mensagens(dados_decodificados)
+                        # Quando receber uma chave publica: vai encriptar os dados das mensagens que estão esperando e envia-las.
+                        elif m.tipo == TipoMensagem.CHAVE_PUBLICA:
+                            dados = m.dados
+                            destino, chave_str = self.separa_destino_de_chave_publica(dados)
+                            chave_publica = self.string_para_chave(chave_str)
+                            self.encripta_mensagens(destino, chave_publica)
                 self.mensagens_lista.pop(0)
 
 
@@ -124,6 +134,31 @@ class PC:
         elif endereco == self.con_ac:
             return TipoCon.CON_AC
 
+    # Separa dos dados de uma mensagem de chave publica, separa a chave publica e o destino do qual a chave pertence.
+    def separa_destino_de_chave_publica(self, string):
+        divisor = g.divisor_dados
+        separados = string.split(divisor)
+        destino = (separados[0], int(separados[1]))
+        chave_pub = divisor.join(separados[2:])
+        return destino, chave_pub
+
+    # Encripta as mensagens que vão para o destino especificado usando a chave.
+    def encripta_mensagens(self, destino, chave):
+        remover_indices = []
+        for i in range(len(self.mensagens_encriptar_lista)):
+            m = self.mensagens_encriptar_lista[i]
+            if isinstance(m, Mensagem):
+                if m.get_destino_endereco() == destino:
+                    dados_encriptados = criptar.encriptar(m.dados, chave)
+                    nova_m = Mensagem(TipoMensagem.APP, m.get_origem_endereco(), destino, dados_encriptados)
+                    remover_indices.append(i)
+                    self.add_mensagem_lista(nova_m)
+            else:
+                remover_indices.append(i)
+        for i in remover_indices:
+            del(self.mensagens_encriptar_lista[i])
+
+
     # Converte a string de uma chave em uma chave.
     def string_para_chave(self, string):
         divisor = g.divisor_dados
@@ -133,7 +168,7 @@ class PC:
             info.append(int(s[i]))
         if s[0] == "Privada":
             chave = criptar.rsa.PrivateKey(info[0], info[1], info[2], info[3], info[4])
-        elif s == "Publica":
+        elif s[0] == "Publica":
             chave = criptar.rsa.PublicKey(info[0], info[1])
         return chave
 
